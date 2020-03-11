@@ -33,13 +33,18 @@ defmodule Proyecto_2 do
   end
 
   def assign_call(winner_call, current) do
+    Process.sleep(:rand.uniform(500))
     telephone = :rand.uniform(4)
 
     case telephone do
       1 ->
-        Mnesia.transaction(fn ->
-          [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
-          answer_call(actual_call + 1, winner_call, current)
+        spawn(fn ->
+          Mnesia.transaction(fn ->
+            [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
+            answer_call(actual_call + 1, winner_call, current)
+          end)
+
+          check_winner(winner_call, current)
         end)
 
       2 ->
@@ -48,6 +53,8 @@ defmodule Proyecto_2 do
             [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
             answer_call(actual_call + 1, winner_call, current)
           end)
+
+          check_winner(winner_call, current)
         end)
 
       3 ->
@@ -56,6 +63,8 @@ defmodule Proyecto_2 do
             [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
             answer_call(actual_call + 1, winner_call, current)
           end)
+
+          check_winner(winner_call, current)
         end)
 
       4 ->
@@ -64,28 +73,37 @@ defmodule Proyecto_2 do
             [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
             answer_call(actual_call + 1, winner_call, current)
           end)
+
+          check_winner(winner_call, current)
         end)
     end
   end
 
   def answer_call(actual_call, winner_call, current) do
     Mnesia.write({Organizer, 1, actual_call})
-    [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
-    Mnesia.write({Caller, actual_call, current})
+    # [{Organizer, 1, actual_call}] = Mnesia.read({Organizer, 1})
+    Mnesia.write({Caller, current, actual_call})
+  end
 
+  def check_winner(winner_call, current) do
+    Mnesia.transaction(fn ->
+      [{Caller, current, actual_call}] = Mnesia.read({Caller, current})
 
-    if actual_call == winner_call do
-      [{Caller, actual_call, winner}] = Mnesia.read({Caller, actual_call})
-      IO.puts("Felicidades ganó el caller con el id: #{winner}")
-      nil
-    end
-    if actual_call < winner_call do
-      [{Caller, actual_call, winner}] = Mnesia.read({Caller, actual_call})
-      IO.puts("Lo sentimos, siga intentando id: #{winner}")
-    else 
-      [{Caller, actual_call, winner}] = Mnesia.read({Caller, actual_call})
-      IO.puts("Lo sentimos, ya hubo un ganador id: #{winner}")
-    end
+      IO.puts("#{actual_call} #{winner_call}")
+
+      if actual_call == winner_call do
+        [{Caller, current, winner}] = Mnesia.read({Caller, current})
+        IO.puts("Felicidades ganó el caller con el id: #{winner}")
+      else
+        [{Caller, current, winner}] = Mnesia.read({Caller, current})
+        IO.puts("Lo sentimos, siga intentando id: #{winner}")
+      end
+
+      if actual_call > winner_call do
+        [{Caller, current, winner}] = Mnesia.read({Caller, current})
+        IO.puts("Lo sentimos, ya hubo un ganador id: #{winner}")
+      end
+    end)
   end
 
   def read_db do
