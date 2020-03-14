@@ -25,9 +25,10 @@ defmodule Prueba do
   def generate_calls(winner_call, number_of_calls, current) do
     Mnesia.transaction(fn -> Mnesia.write({Caller, current, 0}) end)
     spawn(fn -> assign_call(winner_call, current) end)
-    if current < number_of_calls do
+    if(current < number_of_calls)do
       generate_calls(winner_call, number_of_calls, current + 1)
     end
+    IO.write("")
   end
 
   def assign_call(winner_call, current) do
@@ -93,5 +94,6 @@ defmodule Prueba do
   def reset_db do
     Mnesia.delete_table(Organizer)
     Mnesia.delete_table(Caller)
+    Mnesia.delete_table(Phones)
   end
 end
